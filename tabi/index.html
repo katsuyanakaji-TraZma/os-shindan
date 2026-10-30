@@ -231,7 +231,7 @@ function buildTable(){
 let voice=null;
 function pickVoice(){ const vs=speechSynthesis.getVoices(); voice=vs.find(v=>/ja/i.test(v.lang)&&/Google|Kyoko|O-ren|Otoya/i.test(v.name))||vs.find(v=>/ja/i.test(v.lang))||null; }
 if('speechSynthesis' in window){ pickVoice(); speechSynthesis.onvoiceschanged=pickVoice; }
-function speak(text){ if(!('speechSynthesis' in window)) return; speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text); u.lang='ja-JP'; if(voice) u.voice=voice; u.rate=1.0; speechSynthesis.speak(u); }
+function speak(text){ if(!('speechSynthesis' in window)) return; try{ speechSynthesis.cancel(); speechSynthesis.resume(); }catch(e){} const u=new SpeechSynthesisUtterance(text); u.lang='ja-JP'; if(voice) u.voice=voice; u.rate=1.0; speechSynthesis.speak(u); }
 function stopSpeak(){ if('speechSynthesis' in window) speechSynthesis.cancel(); }
 
 function buildLandmarks(){
@@ -291,12 +291,17 @@ let lastAnsL='';
 $('askIn').addEventListener('keydown',e=>{ if(e.key==='Enter') $('askBtn').click(); });
 $('askSpeak').addEventListener('click',()=>speak(lastAnsL));
 $('askStop').addEventListener('click',stopSpeak);
+const IOS=/iPhone|iPad|iPod/.test(navigator.userAgent);
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-if(SR){ const rec=new SR(); rec.lang='ja-JP'; rec.interimResults=false; rec.maxAlternatives=1;
-  rec.onresult=e=>{ const q=e.results[0][0].transcript; $('askIn').value=q; $('askBtn').click(); };
-  rec.onerror=e=>{ $('askOut').textContent='聞き取れませんでした。もう一度。'; $('micBtn').textContent='🎤'; }; rec.onend=()=>{ $('micBtn').textContent='🎤'; };
-  $('micBtn').addEventListener('click',()=>{ stopSpeak(); $('micBtn').textContent='👂'; $('askOut').textContent='聞いています…'; try{ rec.start(); }catch(e){} });
-} else { $('micBtn').hidden=true; }
+if(SR && !IOS){ let rec=null, recTimer=null;
+  function newRec(){ const r=new SR(); r.lang='ja-JP'; r.interimResults=false; r.maxAlternatives=1;
+    r.onresult=e=>{ clearTimeout(recTimer); const q=e.results[0][0].transcript; $('askIn').value=q; $('askBtn').click(); };
+    r.onerror=()=>{ clearTimeout(recTimer); $('askOut').textContent='聞き取れませんでした。もう一度。'; $('micBtn').textContent='🎤'; };
+    r.onend=()=>{ clearTimeout(recTimer); $('micBtn').textContent='🎤'; }; return r; }
+  $('micBtn').addEventListener('click',()=>{ stopSpeak(); try{ if(rec){ try{rec.abort();}catch(e){} } rec=newRec(); $('micBtn').textContent='👂'; $('askOut').textContent='聞いています…'; rec.start();
+      recTimer=setTimeout(()=>{ try{rec.abort();}catch(e){} $('micBtn').textContent='🎤'; $('askOut').textContent='時間切れ。もう一度🎤を押してください。'; },8000);
+    }catch(e){ $('micBtn').textContent='🎤'; $('askOut').textContent='音声認識が使えません。入力欄のキーボードのマイクで話してください。'; } });
+} else { $('micBtn').hidden=true; $('askCard').querySelector('.hint').textContent='入力欄をタップ → キーボード右下のマイクで「岡崎城は？」「次のエイドは？」「天気は？」と話して「聞く」。答えは読み上げます。'; }
 // wake lock (best effort)
 let wl=null; async function lock(){ try{ if('wakeLock' in navigator) wl=await navigator.wakeLock.request('screen'); }catch(e){} }
 document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') lock(); }); lock();
