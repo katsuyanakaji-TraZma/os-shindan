@@ -165,8 +165,8 @@ details[open] summary::after{content:"▴"}
     <div class="label">仲間と位置を共有</div>
     <div class="row"><input type="text" id="shareName" placeholder="表示名（例：なかじま）" maxlength="20" autocomplete="off" style="flex:1"><button class="btn" id="shareBtn">共有 OFF</button></div>
     <div class="row"><input type="text" id="shareNote" placeholder="ひとこと（例：藤川宿で休憩中）" maxlength="40" autocomplete="off" style="flex:1"><button class="btn" id="noteBtn">送る</button></div>
-    <div class="hint" id="shareHint">ONにすると、GPSの位置を約2分おきに本部マップへ送ります。OFFで消えます。</div>
-    <a class="btn" style="text-decoration:none;display:inline-block;text-align:center" href="honbu.html">🗺 本部マップを開く（みんなの現在地）</a>
+    <div class="hint" id="shareHint">ONにすると、GPSの位置を約2分おきに「仲間の動き」の地図へ送ります。OFFで消えます。</div>
+    <a class="btn" style="text-decoration:none;display:inline-block;text-align:center" href="honbu.html">🗺 仲間の動きを見る（みんなの現在地）</a>
   </section>
 
   <section class="card" id="sosCard" style="border-color:var(--bad)">
@@ -361,7 +361,7 @@ function sendPos(force,note){ if(!shareOn||!shareName) return; if(!gpsPos){ $('s
   fetch(NTFY+'/publish?message='+encodeURIComponent(msg)+'&title=pos',{method:'GET'}).then(r=>{ if(!r.ok) throw 0; $('shareHint').textContent='送信 '+fmt(new Date())+'（'+shareName+'・'+km.toFixed(1)+'km）'; }).catch(()=>{ $('shareHint').textContent='送信できませんでした。電波が戻れば再送します。'; }); }
 $('shareBtn').addEventListener('click',()=>{ const n=$('shareName').value.trim(); if(!shareOn && !n){ $('shareHint').textContent='表示名を入れてからONにしてください。'; return; }
   shareOn=!shareOn; shareName=n||shareName; saveShare(); shareUI();
-  if(shareOn){ if(!gpsOn) startGps(); sendPos(true); } else if(shareName){ fetch(NTFY+'/publish?message='+encodeURIComponent(JSON.stringify({name:shareName,off:true,t:Date.now()}))+'&title=pos'); $('shareHint').textContent='共有を止めました。本部マップから消えます。'; } });
+  if(shareOn){ if(!gpsOn) startGps(); sendPos(true); } else if(shareName){ fetch(NTFY+'/publish?message='+encodeURIComponent(JSON.stringify({name:shareName,off:true,t:Date.now()}))+'&title=pos'); $('shareHint').textContent='共有を止めました。仲間の動きから消えます。'; } });
 $('noteBtn').addEventListener('click',()=>{ if(!shareOn){ $('shareHint').textContent='先に共有をONにしてください。'; return; } sendPos(true,$('shareNote').value.trim()); });
 shareUI(); if(shareOn && !gpsOn) startGps();
 setInterval(()=>sendPos(false),30000);
