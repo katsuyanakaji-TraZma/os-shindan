@@ -312,19 +312,19 @@ if(SR && !IOS){ let rec=null, recTimer=null;
 } else { $('micBtn').hidden=true; $('askCard').querySelector('.hint').textContent='入力欄をタップ → キーボード右下のマイクで「岡崎城は？」「次のエイドは？」「天気は？」と話して「聞く」。答えは読み上げます。'; }
 
 // ---- share position ----
-const API="__API__";
+const TOPIC="owari-tabi-JBn4qdeODPQy"; const NTFY="https://ntfy.sh/"+TOPIC;
 let shareOn=false, shareName='', lastSent=0;
 try{ const s=JSON.parse(localStorage.getItem('tomo_share')||'{}'); shareOn=!!s.on; shareName=s.name||''; }catch(e){}
 $('shareName').value=shareName;
 function saveShare(){ try{ localStorage.setItem('tomo_share',JSON.stringify({on:shareOn,name:shareName})); }catch(e){} }
 function shareUI(){ $('shareBtn').textContent=shareOn?'共有 ON':'共有 OFF'; $('shareBtn').classList.toggle('primary',shareOn); }
-function sendPos(force,note){ if(!shareOn||!shareName||!API||API.startsWith('__')) return; if(!gpsPos){ $('shareHint').textContent='GPSで追うをONにすると送信が始まります。'; return; }
+function sendPos(force,note){ if(!shareOn||!shareName) return; if(!gpsPos){ $('shareHint').textContent='GPSで追うをONにすると送信が始まります。'; return; }
   if(!force && Date.now()-lastSent<120000) return; lastSent=Date.now();
-  const km=kmNow(new Date()); const u=API+'?op=set&name='+encodeURIComponent(shareName)+'&lat='+gpsPos.latitude.toFixed(5)+'&lon='+gpsPos.longitude.toFixed(5)+'&km='+km.toFixed(2)+'&pace='+pace+'&acc='+Math.round(gpsPos.accuracy||0)+(note!=null?'&note='+encodeURIComponent(note):'')+'&_='+Date.now();
-  fetch(u,{mode:'no-cors',keepalive:true}).then(()=>{ $('shareHint').textContent='送信 '+fmt(new Date())+'（'+shareName+'・'+km.toFixed(1)+'km）'; }).catch(()=>{ $('shareHint').textContent='送信できませんでした。電波が戻れば再送します。'; }); }
+  const km=kmNow(new Date()); const msg=JSON.stringify({name:shareName,lat:+gpsPos.latitude.toFixed(5),lon:+gpsPos.longitude.toFixed(5),km:+km.toFixed(2),pace:pace,acc:Math.round(gpsPos.accuracy||0),note:note!=null?note:undefined,t:Date.now()});
+  fetch(NTFY+'/publish?message='+encodeURIComponent(msg)+'&title=pos',{method:'GET'}).then(r=>{ if(!r.ok) throw 0; $('shareHint').textContent='送信 '+fmt(new Date())+'（'+shareName+'・'+km.toFixed(1)+'km）'; }).catch(()=>{ $('shareHint').textContent='送信できませんでした。電波が戻れば再送します。'; }); }
 $('shareBtn').addEventListener('click',()=>{ const n=$('shareName').value.trim(); if(!shareOn && !n){ $('shareHint').textContent='表示名を入れてからONにしてください。'; return; }
   shareOn=!shareOn; shareName=n||shareName; saveShare(); shareUI();
-  if(shareOn){ if(!gpsOn) startGps(); sendPos(true); } else if(API&&!API.startsWith('__')&&shareName){ fetch(API+'?op=del&name='+encodeURIComponent(shareName)+'&_='+Date.now(),{mode:'no-cors'}); $('shareHint').textContent='共有を止めました。本部マップから消えます。'; } });
+  if(shareOn){ if(!gpsOn) startGps(); sendPos(true); } else if(shareName){ fetch(NTFY+'/publish?message='+encodeURIComponent(JSON.stringify({name:shareName,off:true,t:Date.now()}))+'&title=pos'); $('shareHint').textContent='共有を止めました。本部マップから消えます。'; } });
 $('noteBtn').addEventListener('click',()=>{ if(!shareOn){ $('shareHint').textContent='先に共有をONにしてください。'; return; } sendPos(true,$('shareNote').value.trim()); });
 shareUI(); if(shareOn && !gpsOn) startGps();
 setInterval(()=>sendPos(false),30000);
