@@ -120,8 +120,8 @@ details[open] summary::after{content:"▴"}
   <section class="card" id="wcCard">
     <div class="label">🚻 トイレ ・ 🏪 コンビニ（次に来るもの）</div>
     <div class="next">
-      <span>次のトイレ</span><span class="v" id="nextWc">—</span>
-      <span>次のコンビニ</span><span class="v" id="nextCvs">—</span>
+      <span>次のトイレ</span><a class="v" id="nextWc" href="honbu.html" style="color:var(--ink);text-decoration:none">—</a>
+      <span>次のコンビニ</span><a class="v" id="nextCvs" href="honbu.html" style="color:var(--ink);text-decoration:none">—</a>
     </div>
     <details><summary>全部見る</summary>
       <div class="scroll" style="margin-top:8px"><table id="wcTable"><thead><tr><th>km</th><th>場所</th><th>種類</th><th>メモ</th></tr></thead><tbody></tbody></table></div>
@@ -197,8 +197,8 @@ const FACIL=[
  {km:98.8,n:'花園幼稚園 豊橋別院（ゴール）',t:'wc',m:'休憩スペース・荷物受け取り'}];
 const TL={wc:'🚻 トイレ',cvs:'🏪 コンビニ',both:'🏪🚻 コンビニ＋トイレ'};
 function renderFacil(km){ const nw=FACIL.find(f=>(f.t==='wc'||f.t==='both')&&f.km>km-0.3); const nc=FACIL.find(f=>(f.t==='cvs'||f.t==='both')&&f.km>km-0.3);
-  $('nextWc').textContent= nw? nw.n.replace(/（.*?）/,'')+'（あと'+Math.max(0,nw.km-km).toFixed(1)+'km）':'—';
-  $('nextCvs').textContent= nc? nc.n.replace(/（.*?）/,'')+'（あと'+Math.max(0,nc.km-km).toFixed(1)+'km）':'—';
+  $('nextWc').textContent= nw? nw.n.replace(/（.*?）/,'')+'（あと'+Math.max(0,nw.km-km).toFixed(1)+'km）🗺':'—'; if(nw) $('nextWc').href='honbu.html#km='+nw.km;
+  $('nextCvs').textContent= nc? nc.n.replace(/（.*?）/,'')+'（あと'+Math.max(0,nc.km-km).toFixed(1)+'km）🗺':'—'; if(nc) $('nextCvs').href='honbu.html#km='+nc.km;
   const tb=$('wcTable').querySelector('tbody'); if(!tb.children.length){ FACIL.forEach(f=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${f.km}</td><td style="white-space:normal">${f.n}</td><td>${TL[f.t]}</td><td style="white-space:normal;font-size:13px;color:var(--mute)">${f.m}</td>`; tb.appendChild(tr); }); }
   [...tb.children].forEach((tr,i)=>tr.classList.toggle('now', FACIL[i]===nw||FACIL[i]===nc)); }
 const START = new Date(2026,9,31,15,12,0);
