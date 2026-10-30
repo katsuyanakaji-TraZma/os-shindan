@@ -150,6 +150,14 @@ details[open] summary::after{content:"▴"}
     <div class="row"><button class="btn" id="askSpeak" hidden>🔊 もう一度</button><button class="btn" id="askStop" hidden>■ 止める</button></div>
   </section>
 
+  <section class="card" id="shareCard">
+    <div class="label">仲間と位置を共有</div>
+    <div class="row"><input type="text" id="shareName" placeholder="表示名（例：なかじま）" maxlength="20" autocomplete="off" style="flex:1"><button class="btn" id="shareBtn">共有 OFF</button></div>
+    <div class="row"><input type="text" id="shareNote" placeholder="ひとこと（例：藤川宿で休憩中）" maxlength="40" autocomplete="off" style="flex:1"><button class="btn" id="noteBtn">送る</button></div>
+    <div class="hint" id="shareHint">ONにすると、GPSの位置を約2分おきに本部マップへ送ります。OFFで消えます。</div>
+    <a class="btn" style="text-decoration:none;display:inline-block;text-align:center" href="honbu.html">🗺 本部マップを開く（みんなの現在地）</a>
+  </section>
+
   <p class="foot">第4回尾張三河ウルトラウォーキング2026 ・ 2026/10/31 15:12スタート ・ 制限28時間（関門：74km道の駅藤川宿 11:30 ／ 88kmローソン豊川国府店 16:00）。各地点のkmは公式GPX（10/15版）から算出。</p>
 </div>
 
@@ -259,8 +267,8 @@ $('kmAuto').addEventListener('click',()=>{ manualKm=null; manualAt=null; save();
 // ---- GPS ----
 let gpsOn=false, watchId=null, gpsPos=null, offCourse=null;
 function snap(lat,lon){ let best=0,bd=1e9; for(let i=0;i<TRACK.length;i++){ const dlat=(TRACK[i][0]-lat)*111.32, dlon=(TRACK[i][1]-lon)*111.32*Math.cos(lat*Math.PI/180); const d=dlat*dlat+dlon*dlon; if(d<bd){bd=d;best=i;} } return {km:TRACK[best][2], dist:Math.sqrt(bd)}; }
-function onPos(p){ gpsPos=p.coords; const s=snap(p.coords.latitude,p.coords.longitude); offCourse=s.dist; if(s.dist<0.4){ manualKm=s.km; manualAt=Date.now(); save(); } render(); fetchLive(); }
-function startGps(){ if(!('geolocation' in navigator)){ $('kmSrc').textContent='この端末ではGPSが使えません'; return; } gpsOn=true; $('kmGps').textContent='📍 GPS追跡中'; watchId=navigator.geolocation.watchPosition(onPos,e=>{ $('kmSrc').textContent='GPS取得できず：'+e.message; },{enableHighAccuracy:true,maximumAge:30000,timeout:20000}); }
+let onPos=function(p){ gpsPos=p.coords; const s=snap(p.coords.latitude,p.coords.longitude); offCourse=s.dist; if(s.dist<0.4){ manualKm=s.km; manualAt=Date.now(); save(); } render(); fetchLive(); }
+function startGps(){ if(!('geolocation' in navigator)){ $('kmSrc').textContent='この端末ではGPSが使えません'; return; } gpsOn=true; $('kmGps').textContent='📍 GPS追跡中'; watchId=navigator.geolocation.watchPosition(p=>onPos(p),e=>{ $('kmSrc').textContent='GPS取得できず：'+e.message; },{enableHighAccuracy:true,maximumAge:30000,timeout:20000}); }
 $('kmGps').addEventListener('click',()=>{ if(gpsOn){ navigator.geolocation.clearWatch(watchId); gpsOn=false; $('kmGps').textContent='📍 GPSで追う'; } else startGps(); });
 const _render=render; render=function(){ _render(); if(gpsOn&&gpsPos){ const now=new Date(); $('kmSrc').textContent='GPS '+fmt(new Date(gpsPos.timestamp||now))+' 取得'+(offCourse!=null&&offCourse>=0.4?'（コースから'+Math.round(offCourse*1000)+'m離れています）':'')+'・ペース'+pace+'h'; } };
 // ---- live weather (Open-Meteo, browser fetch) ----
@@ -302,6 +310,26 @@ if(SR && !IOS){ let rec=null, recTimer=null;
       recTimer=setTimeout(()=>{ try{rec.abort();}catch(e){} $('micBtn').textContent='🎤'; $('askOut').textContent='時間切れ。もう一度🎤を押してください。'; },8000);
     }catch(e){ $('micBtn').textContent='🎤'; $('askOut').textContent='音声認識が使えません。入力欄のキーボードのマイクで話してください。'; } });
 } else { $('micBtn').hidden=true; $('askCard').querySelector('.hint').textContent='入力欄をタップ → キーボード右下のマイクで「岡崎城は？」「次のエイドは？」「天気は？」と話して「聞く」。答えは読み上げます。'; }
+
+// ---- share position ----
+const API="__API__";
+let shareOn=false, shareName='', lastSent=0;
+try{ const s=JSON.parse(localStorage.getItem('tomo_share')||'{}'); shareOn=!!s.on; shareName=s.name||''; }catch(e){}
+$('shareName').value=shareName;
+function saveShare(){ try{ localStorage.setItem('tomo_share',JSON.stringify({on:shareOn,name:shareName})); }catch(e){} }
+function shareUI(){ $('shareBtn').textContent=shareOn?'共有 ON':'共有 OFF'; $('shareBtn').classList.toggle('primary',shareOn); }
+function sendPos(force,note){ if(!shareOn||!shareName||!API||API.startsWith('__')) return; if(!gpsPos){ $('shareHint').textContent='GPSで追うをONにすると送信が始まります。'; return; }
+  if(!force && Date.now()-lastSent<120000) return; lastSent=Date.now();
+  const km=kmNow(new Date()); const u=API+'?op=set&name='+encodeURIComponent(shareName)+'&lat='+gpsPos.latitude.toFixed(5)+'&lon='+gpsPos.longitude.toFixed(5)+'&km='+km.toFixed(2)+'&pace='+pace+'&acc='+Math.round(gpsPos.accuracy||0)+(note!=null?'&note='+encodeURIComponent(note):'')+'&_='+Date.now();
+  fetch(u,{mode:'no-cors',keepalive:true}).then(()=>{ $('shareHint').textContent='送信 '+fmt(new Date())+'（'+shareName+'・'+km.toFixed(1)+'km）'; }).catch(()=>{ $('shareHint').textContent='送信できませんでした。電波が戻れば再送します。'; }); }
+$('shareBtn').addEventListener('click',()=>{ const n=$('shareName').value.trim(); if(!shareOn && !n){ $('shareHint').textContent='表示名を入れてからONにしてください。'; return; }
+  shareOn=!shareOn; shareName=n||shareName; saveShare(); shareUI();
+  if(shareOn){ if(!gpsOn) startGps(); sendPos(true); } else if(API&&!API.startsWith('__')&&shareName){ fetch(API+'?op=del&name='+encodeURIComponent(shareName)+'&_='+Date.now(),{mode:'no-cors'}); $('shareHint').textContent='共有を止めました。本部マップから消えます。'; } });
+$('noteBtn').addEventListener('click',()=>{ if(!shareOn){ $('shareHint').textContent='先に共有をONにしてください。'; return; } sendPos(true,$('shareNote').value.trim()); });
+shareUI(); if(shareOn && !gpsOn) startGps();
+setInterval(()=>sendPos(false),30000);
+const _onPos=onPos; onPos=function(p){ _onPos(p); sendPos(false); };
+
 // wake lock (best effort)
 let wl=null; async function lock(){ try{ if('wakeLock' in navigator) wl=await navigator.wakeLock.request('screen'); }catch(e){} }
 document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') lock(); }); lock();
