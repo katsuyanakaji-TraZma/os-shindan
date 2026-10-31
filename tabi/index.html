@@ -166,6 +166,7 @@ details[open] summary::after{content:"▴"}
   <section class="card" id="shareCard">
     <div class="label">仲間と位置を共有</div>
     <div class="row"><input type="text" id="shareName" placeholder="表示名（例：なかじま）" maxlength="20" autocomplete="off" style="flex:1"><button class="btn" id="shareBtn">共有 OFF</button></div>
+    <div class="row"><button class="btn primary" id="goalBtn" style="flex:1">🏁 ゴールした！</button><button class="btn" id="retireBtn" style="flex:1">🛏 ここまでにする</button></div>
     <div class="row"><input type="text" id="shareNote" placeholder="ひとこと（例：藤川宿で休憩中）" maxlength="40" autocomplete="off" style="flex:1"><button class="btn" id="noteBtn">送る</button></div>
     <div class="hint" id="shareHint">ONにすると、GPSの位置を約2分おきに「仲間の動き」の地図へ送ります。OFFで消えます。</div>
     <a class="btn" style="text-decoration:none;display:inline-block;text-align:center" href="honbu.html">🗺 仲間の動きを見る（みんなの現在地）</a>
@@ -352,18 +353,22 @@ if(SR && !IOS){ let rec=null, recTimer=null;
 
 // ---- share position ----
 const TOPIC="owari-tabi-JBn4qdeODPQy"; const NTFY="https://ntfy.sh/"+TOPIC;
-let shareOn=false, shareName='', lastSent=0;
-try{ const s=JSON.parse(localStorage.getItem('tomo_share')||'{}'); shareOn=!!s.on; shareName=s.name||''; }catch(e){}
+let shareOn=false, shareName='', lastSent=0, myStatus='';
+try{ const s=JSON.parse(localStorage.getItem('tomo_share')||'{}'); shareOn=!!s.on; shareName=s.name||''; myStatus=s.st||''; }catch(e){}
 $('shareName').value=shareName;
-function saveShare(){ try{ localStorage.setItem('tomo_share',JSON.stringify({on:shareOn,name:shareName})); }catch(e){} }
+function saveShare(){ try{ localStorage.setItem('tomo_share',JSON.stringify({on:shareOn,name:shareName,st:myStatus})); }catch(e){} }
 function shareUI(){ $('shareBtn').textContent=shareOn?'共有 ON':'共有 OFF'; $('shareBtn').classList.toggle('primary',shareOn); }
 function sendPos(force,note){ if(!shareOn||!shareName) return; if(!gpsPos){ $('shareHint').textContent='GPSで追うをONにすると送信が始まります。'; return; }
   if(!force && Date.now()-lastSent<120000) return; lastSent=Date.now();
-  const km=kmNow(new Date()); const msg=JSON.stringify({name:shareName,lat:+gpsPos.latitude.toFixed(5),lon:+gpsPos.longitude.toFixed(5),km:+km.toFixed(2),pace:pace,acc:Math.round(gpsPos.accuracy||0),note:note!=null?note:undefined,t:Date.now()});
+  const km=kmNow(new Date()); const msg=JSON.stringify({name:shareName,st:myStatus||undefined,lat:+gpsPos.latitude.toFixed(5),lon:+gpsPos.longitude.toFixed(5),km:+km.toFixed(2),pace:pace,acc:Math.round(gpsPos.accuracy||0),note:note!=null?note:undefined,t:Date.now()});
   fetch(NTFY+'/publish?message='+encodeURIComponent(msg)+'&title=pos',{method:'GET'}).then(r=>{ if(!r.ok) throw 0; $('shareHint').textContent='送信 '+fmt(new Date())+'（'+shareName+'・'+km.toFixed(1)+'km）'; }).catch(()=>{ $('shareHint').textContent='送信できませんでした。電波が戻れば再送します。'; }); }
 $('shareBtn').addEventListener('click',()=>{ const n=$('shareName').value.trim(); if(!shareOn && !n){ $('shareHint').textContent='表示名を入れてからONにしてください。'; return; }
   shareOn=!shareOn; shareName=n||shareName; saveShare(); shareUI();
   if(shareOn){ if(!gpsOn) startGps(); sendPos(true); } else if(shareName){ fetch(NTFY+'/publish?message='+encodeURIComponent(JSON.stringify({name:shareName,off:true,t:Date.now()}))+'&title=pos'); $('shareHint').textContent='共有を止めました。仲間の動きから消えます。'; } });
+function setStatus(st,label){ if(!shareOn){ $('shareHint').textContent='先に共有をONにしてください。'; return; } myStatus=(myStatus===st)?'':st; saveShare(); $('goalBtn').classList.toggle('primary',myStatus!=='done'); $('goalBtn').textContent=myStatus==='goal'?'🏁 ゴール済み（取消はもう一度）':'🏁 ゴールした！'; $('retireBtn').textContent=myStatus==='done'?'🛏 ここまで（取消はもう一度）':'🛏 ここまでにする'; sendPos(true, myStatus?label:''); if(myStatus==='goal') speak('ゴール、おめでとうございます。百キロ、お疲れさまでした。'); }
+$('goalBtn').addEventListener('click',()=>setStatus('goal','ゴール！'));
+$('retireBtn').addEventListener('click',()=>setStatus('done','ここまで。おつかれさま'));
+if(myStatus){ $('goalBtn').textContent=myStatus==='goal'?'🏁 ゴール済み（取消はもう一度）':'🏁 ゴールした！'; $('retireBtn').textContent=myStatus==='done'?'🛏 ここまで（取消はもう一度）':'🛏 ここまでにする'; }
 $('noteBtn').addEventListener('click',()=>{ if(!shareOn){ $('shareHint').textContent='先に共有をONにしてください。'; return; } sendPos(true,$('shareNote').value.trim()); });
 shareUI(); if(shareOn && !gpsOn) startGps();
 setInterval(()=>sendPos(false),30000);
@@ -373,8 +378,8 @@ const _onPos=onPos; onPos=function(p){ _onPos(p); sendPos(false); };
 async function loadTeam(){ try{ const r=await fetch(NTFY+'/json?poll=1&since=6h&_='+Date.now()); if(!r.ok) return; const txt=await r.text(); const latest={};
   txt.split('\n').forEach(line=>{ if(!line.trim()) return; try{ const ev=JSON.parse(line); if(ev.event!=='message') return; const d=JSON.parse(ev.message); if(!d.name) return; d.ts=d.t||ev.time*1000; if(!latest[d.name]||latest[d.name].ts<d.ts) latest[d.name]=d; }catch(e){} });
   const ps=Object.values(latest).filter(d=>!d.off); if(!ps.length){ $('teamLine').hidden=true; return; }
-  const sum=ps.reduce((s,p)=>s+Math.min(TOTAL,p.km||0),0); const pct=Math.round(sum/(ps.length*TOTAL)*100); const lead=ps.slice().sort((a,b)=>(b.km||0)-(a.km||0))[0];
-  $('teamLine').hidden=false; $('teamLine').textContent='👥 チーム踏破率 '+pct+'%（'+ps.length+'人・合計 '+sum.toFixed(0)+'km）・先頭 '+lead.name+' '+(lead.km||0).toFixed(1)+'km'; }catch(e){} }
+  const g=ps.filter(p=>p.st==='goal').length, d=ps.filter(p=>p.st==='done').length, w=ps.length-g-d; const sum=ps.reduce((s,p)=>s+(p.st==='goal'?TOTAL:Math.min(TOTAL,p.km||0)),0); const pct=Math.round(sum/(ps.length*TOTAL)*100);
+  $('teamLine').hidden=false; $('teamLine').textContent='👥 チーム踏破率 '+pct+'%　🚶 歩行中 '+w+'　🏁 ゴール '+g+(d?'　🛏 ここまで '+d:''); }catch(e){} }
 loadTeam(); setInterval(loadTeam,120000);
 // wake lock (best effort)
 let wl=null; async function lock(){ try{ if('wakeLock' in navigator) wl=await navigator.wakeLock.request('screen'); }catch(e){} }
