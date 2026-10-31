@@ -214,25 +214,25 @@ const CHEERS=[
  {km:0,t:'自分を信じて、GO!!'},
  {km:5,t:'もう5km。いい足音してる。'},
  {km:10,t:'10km。あーあと90kmしか楽しめなーい😭 日が暮れたらヘッドランプ。'},
- {km:15,t:'15km。ここからが本番。水、ひとくち。'},
+ {km:15,t:'15km。ここからが本番。水、ひとくち。ビールは豊橋で。'},
  {km:20,t:'20km。5分の1。名古屋はもう後ろ。'},
  {km:25,t:'もう25km。あーあと75kmしか楽しめなーい😭'},
  {km:30,t:'30km、豊田。この先は家康の故郷へ向かう道。'},
- {km:35,t:'35km。真っ暗な道は、仲間と歩けば近道。'},
+ {km:35,t:'35km。真っ暗な道は、仲間と歩けば近道。ビールが待っている！'},
  {km:40,t:'40km。松平郷まであと少し。天井画が待ってる。'},
  {km:44,t:'44km、松平郷。ここまで来た自分を、まず褒める。'},
  {km:50,t:'50km、半分！ 100 LOVE♡ その笑顔でGoalまでGO!'},
  {km:55,t:'55km。いちばん寒くて、いちばん静かな時間。生きてる。'},
  {km:60,t:'60km。痛い？ 生きてる証拠！ ありがたや〜'},
  {km:65,t:'65km、岡崎城。家康も19歳でここに帰ってきた。'},
- {km:70,t:'70km。夜が明ける。関門はもう見えてる。'},
+ {km:70,t:'70km。夜が明ける。関門の先に、ビールが待っている！'},
  {km:74,t:'74km、藤川宿。関門突破！ ここからは旧東海道。'},
- {km:80,t:'80km。あと20km。弥次さん喜多さんも歩いた道。'},
+ {km:80,t:'80km。あと20km。弥次さん喜多さんも、この先で一杯やった。'},
  {km:85,t:'85km、松並木。400年前の旅人と同じ木陰。'},
  {km:88,t:'88km、最後のエイド。あと11km。もう見えてる。'},
- {km:92,t:'92km。豊川を渡ればゴールの街。'},
- {km:95,t:'95km。あと5km。一歩ずつ、笑顔で。'},
- {km:98.8,t:'100km。ゴール。100 LOVE♡ おめでとう！'}];
+ {km:92,t:'92km。豊川を渡ればゴールの街。ビールはもう冷えてる。'},
+ {km:95,t:'95km。あと5km。一歩ずつ、笑顔で。ビールが待っている！！'},
+ {km:98.8,t:'100km。ゴール。100 LOVE♡ おめでとう！ さあ、ビール！🍺'}];
 let cheerShown=-1; try{ cheerShown=+(localStorage.getItem('tomo_cheer')||-1); }catch(e){}
 function cheer(km){ let c=null; for(const x of CHEERS){ if(km>=x.km-0.2) c=x; } if(!c) return; $('cheerText').textContent=c.t; $('cheerAt').textContent=c.km+'km地点';
   if(c.km>cheerShown){ cheerShown=c.km; try{ localStorage.setItem('tomo_cheer',String(c.km)); }catch(e){} if(gpsOn&&c.km>0){ speak(c.t.replace(/😭|♡|!!/g,'')); if(navigator.vibrate) navigator.vibrate([200,100,200]); } } }
