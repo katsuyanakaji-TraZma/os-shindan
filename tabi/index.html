@@ -99,7 +99,8 @@ details[open] summary::after{content:"▴"}
 
   <section class="card" id="now">
     <div class="label">いま</div>
-    <div class="big"><span id="kmNow">0.0</span><small>km / 98.8</small></div>
+    <div class="big"><span id="kmNow">0.0</span><small>km / 98.8</small><small id="pctNow" style="margin-left:10px;color:var(--ink)">0%</small></div>
+    <div class="hint" id="teamLine" hidden></div>
     <div class="bar"><i id="barFill" style="width:0%"></i><s style="left:74.9%" title="74km関門"></s><s style="left:89%" title="88km関門"></s></div>
     <div class="kmctl">
       <button class="btn" id="kmMinus" aria-label="1km戻す">−1</button>
@@ -239,7 +240,7 @@ let render=function(){
   const now=new Date();
   $('clock').textContent=fmt(now);
   const km=kmNow(now);
-  $('kmNow').textContent=km.toFixed(1);
+  $('kmNow').textContent=km.toFixed(1); $('pctNow').textContent=Math.round(km/TOTAL*100)+'%';
   $('barFill').style.width=(km/TOTAL*100)+'%';
   if(now<START && manualKm==null) $('kmSrc').textContent='スタート前。15:12に自動で動き出します。';
   else if(manualKm!=null) $('kmSrc').textContent='ガーミンの値 '+manualKm.toFixed(1)+'km（'+fmt(new Date(manualAt))+'入力）から、'+pace+'時間ペースで推定';
@@ -368,6 +369,13 @@ shareUI(); if(shareOn && !gpsOn) startGps();
 setInterval(()=>sendPos(false),30000);
 const _onPos=onPos; onPos=function(p){ _onPos(p); sendPos(false); };
 
+// team progress
+async function loadTeam(){ try{ const r=await fetch(NTFY+'/json?poll=1&since=6h&_='+Date.now()); if(!r.ok) return; const txt=await r.text(); const latest={};
+  txt.split('\n').forEach(line=>{ if(!line.trim()) return; try{ const ev=JSON.parse(line); if(ev.event!=='message') return; const d=JSON.parse(ev.message); if(!d.name) return; d.ts=d.t||ev.time*1000; if(!latest[d.name]||latest[d.name].ts<d.ts) latest[d.name]=d; }catch(e){} });
+  const ps=Object.values(latest).filter(d=>!d.off); if(!ps.length){ $('teamLine').hidden=true; return; }
+  const sum=ps.reduce((s,p)=>s+Math.min(TOTAL,p.km||0),0); const pct=Math.round(sum/(ps.length*TOTAL)*100); const lead=ps.slice().sort((a,b)=>(b.km||0)-(a.km||0))[0];
+  $('teamLine').hidden=false; $('teamLine').textContent='👥 チーム踏破率 '+pct+'%（'+ps.length+'人・合計 '+sum.toFixed(0)+'km）・先頭 '+lead.name+' '+(lead.km||0).toFixed(1)+'km'; }catch(e){} }
+loadTeam(); setInterval(loadTeam,120000);
 // wake lock (best effort)
 let wl=null; async function lock(){ try{ if('wakeLock' in navigator) wl=await navigator.wakeLock.request('screen'); }catch(e){} }
 document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') lock(); }); lock();

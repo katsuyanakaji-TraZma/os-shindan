@@ -11,7 +11,12 @@ body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16
 header{flex-wrap:wrap;padding:10px max(16px,env(safe-area-inset-left)) 8px max(16px,env(safe-area-inset-right));display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line);background:var(--bg)}
 h1{font-family:var(--f-display);font-size:20px;margin:0}
 .st{margin-left:auto;font-size:13px;color:var(--mute);font-variant-numeric:tabular-nums}
-#map{flex:1;min-height:45vh}
+#map{flex:1;min-height:40vh}
+.team{padding:8px max(16px,env(safe-area-inset-left)) 8px max(16px,env(safe-area-inset-right));background:var(--panel);border-bottom:1px solid var(--line)}
+.tl{display:flex;align-items:baseline;gap:10px;font-size:13px;color:var(--mute)}.tl b{font-family:var(--f-display);font-size:30px;color:var(--ink);font-variant-numeric:tabular-nums;margin-left:auto}
+.tbar{height:10px;border-radius:999px;background:var(--line);overflow:hidden;margin:4px 0}.tbar i{display:block;height:100%;background:linear-gradient(90deg,#d68910,#e8c56b);border-radius:999px;transition:width .6s}
+.tsub{display:flex;justify-content:space-between;font-size:12px;color:var(--mute);font-variant-numeric:tabular-nums}
+.pbar{height:4px;border-radius:999px;background:var(--line);overflow:hidden;margin-top:4px}.pbar i{display:block;height:100%;border-radius:999px}
 .list{max-height:40vh;overflow:auto;border-top:1px solid var(--line);background:var(--panel);padding:6px max(16px,env(safe-area-inset-left)) calc(8px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-right))}
 .row{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);cursor:pointer}
 .row:last-child{border-bottom:0}
@@ -29,6 +34,11 @@ h1{font-family:var(--f-display);font-size:20px;margin:0}
 button{font:inherit;border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:8px;padding:6px 10px;cursor:pointer}
 </style></head><body>
 <header><img src="icon-180.png" alt="" style="width:34px;height:34px;border-radius:8px"><a href="index.html" class="back" style="text-decoration:none;color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:14px;white-space:nowrap">← 旅の友</a><h1>仲間の動き</h1><span class="st" id="st">読込中…</span><button id="me" hidden>📍 自分</button><button id="fit">全員</button></header>
+<div class="team" id="team" hidden>
+  <div class="tl"><span>チーム踏破率</span><b id="teamPct">0%</b></div>
+  <div class="tbar"><i id="teamBar" style="width:0%"></i></div>
+  <div class="tsub"><span id="teamSum">合計 0km</span><span id="teamGoal">ゴール 0人</span></div>
+</div>
 <div id="map"></div>
 <div class="list" id="list"><div class="empty">まだ誰も共有していません。旅の友の下のほうで名前を入れて「共有」をONに。</div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -84,12 +94,15 @@ async function load(){
 function render(j){ const people=(j.people||[]).filter(p=>p.lat&&p.lon).sort((a,b)=>(b.km||0)-(a.km||0)); const list=document.getElementById('list'); list.innerHTML='';
   if(!people.length){ list.innerHTML='<div class="empty">まだ誰も共有していません。旅の友の下のほうで名前を入れて「共有」をONに。</div>'; return; }
   const now=j.now||Date.now();
+  const TOTALKM=98.8; const sum=people.reduce((s,p)=>s+Math.min(TOTALKM,p.km||0),0); const pct=Math.round(sum/(people.length*TOTALKM)*100); const goals=people.filter(p=>(p.km||0)>=TOTALKM-0.3).length;
+  const t=document.getElementById('team'); t.hidden=false; document.getElementById('teamPct').textContent=pct+'%'; document.getElementById('teamBar').style.width=pct+'%';
+  document.getElementById('teamSum').textContent='みんなで '+sum.toFixed(1)+'km ／ '+(people.length*TOTALKM).toFixed(0)+'km（'+people.length+'人）'; document.getElementById('teamGoal').textContent='🏁 ゴール '+goals+'人';
   people.forEach((p,i)=>{ if(!colorOf[p.name]) colorOf[p.name]=COLORS[(ci++)%COLORS.length]; const c=colorOf[p.name]; const stale=now-p.ts>20*60000; const ini=String(p.name).slice(0,2);
     const html=`<div class="pin" style="background:${c};width:26px;height:26px;opacity:${stale?.5:1}">${ini}</div>`;
     const icon=L.divIcon({className:'',html,iconSize:[26,26],iconAnchor:[13,13]});
     const na=nextAid(p.km||0); const pop=`<b>${p.name}</b><br>${(p.km||0).toFixed(1)}km ・ ${placeName(p.km||0)}付近<br>${na?'次: '+na.n+' あと'+(na.km-p.km).toFixed(1)+'km':'ゴール'}<br>${p.pace}hペース ・ ${ago(now-p.ts)}${p.note?'<br>📝 '+p.note:''}`;
     if(markers[p.name]){ markers[p.name].setLatLng([p.lat,p.lon]).setIcon(icon).bindPopup(pop); } else { markers[p.name]=L.marker([p.lat,p.lon],{icon}).addTo(map).bindPopup(pop); }
-    const row=document.createElement('div'); row.className='row'+(stale?' stale':''); row.innerHTML=`<div class="dot" style="background:${c}">${ini}</div><div><div class="nm">${p.name}</div><div class="sub">${placeName(p.km||0)}付近 ・ ${na?'次 '+na.n+' あと'+(na.km-p.km).toFixed(1)+'km':'ゴール'}${p.note?' ・ 📝'+p.note:''}</div></div><div><div class="km">${(p.km||0).toFixed(1)}<span style="font-size:12px;color:var(--mute)">km</span></div><div class="ago">${ago(now-p.ts)}</div></div>`;
+    const row=document.createElement('div'); row.className='row'+(stale?' stale':''); row.innerHTML=`<div class="dot" style="background:${c}">${ini}</div><div><div class="nm">${p.name}</div><div class="sub">${placeName(p.km||0)}付近 ・ ${na?'次 '+na.n+' あと'+(na.km-p.km).toFixed(1)+'km':'🏁 ゴール！'}${p.note?' ・ 📝'+p.note:''}</div><div class="pbar"><i style="width:${Math.min(100,(p.km||0)/98.8*100)}%;background:${c}"></i></div></div><div><div class="km">${Math.round((p.km||0)/98.8*100)}<span style="font-size:12px;color:var(--mute)">%</span></div><div class="ago">${(p.km||0).toFixed(1)}km</div><div class="ago">${ago(now-p.ts)}</div></div>`;
     row.onclick=()=>{ map.setView([p.lat,p.lon],14); markers[p.name].openPopup(); }; list.appendChild(row); });
   for(const n in markers){ if(!people.find(p=>p.name===n)){ map.removeLayer(markers[n]); delete markers[n]; } } }
 document.getElementById('fit').onclick=()=>{ const ms=Object.values(markers); if(ms.length) map.fitBounds(L.featureGroup(ms).getBounds().pad(.3)); else map.fitBounds(line.getBounds()); };
