@@ -41,17 +41,26 @@ button{font-family:var(--f-body);cursor:pointer}
 input[type=number],input[type=text]{font:inherit;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
 input[type=number]{width:96px;font-variant-numeric:tabular-nums}
 .src{font-size:13px;color:var(--mute)}
-.next{display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:baseline}
+.next{display:grid;grid-template-columns:6.5em 1fr;gap:10px 10px;align-items:start}
+.next>span:nth-child(odd){font-size:13px;color:var(--mute);padding-top:3px}
 .next b{font-family:var(--f-display);font-size:19px}
-.next .v{font-variant-numeric:tabular-nums;font-size:19px;text-align:right}
+.next .v{font-variant-numeric:tabular-nums;font-size:18px;text-align:left;line-height:1.35;min-width:0;overflow-wrap:anywhere}
 .bar{height:8px;border-radius:999px;background:var(--line);overflow:hidden;position:relative}
 .bar i{position:absolute;inset:0 auto 0 0;background:var(--ink);border-radius:999px}
 .bar s{position:absolute;top:-3px;width:2px;height:14px;background:var(--bad)}
 .wx{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center}
 .wx .v{font-family:var(--f-display);font-size:26px;font-variant-numeric:tabular-nums}
 .wx .k{font-size:12px;color:var(--mute)}
-table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
-th,td{padding:6px 6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.fl{display:flex;flex-direction:column;margin-top:8px}
+.fi{display:grid;grid-template-columns:3.2em 1fr;gap:2px 10px;padding:10px 0;border-top:1px solid var(--line)}
+.fi .fk{font-variant-numeric:tabular-nums;color:var(--mute);font-size:14px;padding-top:2px}
+.fi .fn{font-weight:700}
+.fi .ft{font-size:12px;color:var(--mute)}
+.fi .fm{grid-column:2;font-size:13px;color:var(--mute);line-height:1.5}
+.fi.now{background:var(--ink-soft);margin:0 -8px;padding:10px 8px;border-radius:8px}
+.fi.now .fn{color:var(--ink)}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{padding:7px 5px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap;vertical-align:top}
 th:first-child,td:first-child{text-align:left}
 th{color:var(--mute);font-weight:500;font-size:12px}
 .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
@@ -63,12 +72,12 @@ details[open] summary::after{content:"▴"}
 .lm-item{border-top:1px solid var(--line);padding:10px 0}
 .lm-item:first-child{border-top:0}
 .lm-head{display:flex;align-items:baseline;gap:10px;width:100%;background:none;border:0;color:var(--fg);text-align:left;padding:0;font-size:17px}
-.lm-head .km{font-variant-numeric:tabular-nums;color:var(--mute);width:58px;flex:none;font-size:14px}
-.lm-head .nm{font-family:var(--f-display);font-weight:700;font-size:18px}
+.lm-head .km{font-variant-numeric:tabular-nums;color:var(--mute);width:52px;flex:none;font-size:13px}
+.lm-head .nm{font-family:var(--f-display);font-weight:700;font-size:17px;min-width:0}
 .lm-head .eta{margin-left:auto;color:var(--mute);font-size:13px;font-variant-numeric:tabular-nums;flex:none}
 .lm-item.next .nm{color:var(--ink)}
 .lm-item.past{opacity:.55}
-.lm-body{display:none;padding:8px 0 4px 68px;gap:8px;flex-direction:column}
+.lm-body{display:none;padding:8px 0 4px 0;gap:10px;flex-direction:column}
 .lm-item.open .lm-body{display:flex}
 .lm-body p{margin:0}
 .tip{border-left:3px solid var(--ink);padding-left:10px;color:var(--fg)}
@@ -99,12 +108,12 @@ details[open] summary::after{content:"▴"}
 
   <section class="card" id="now">
     <div class="label">いま</div>
-    <div class="big"><span id="kmNow">0.0</span><small>km / 98.8</small><small id="pctNow" style="margin-left:10px;color:var(--ink)">0%</small></div>
+    <div class="big"><span id="kmNow">0.0</span><small>km / 98.8</small><small id="pctNow" style="margin-left:8px;color:var(--ink);font-weight:700">0%</small></div>
     <div class="hint" id="teamLine" hidden></div>
     <div class="bar"><i id="barFill" style="width:0%"></i><s style="left:74.9%" title="74km関門"></s><s style="left:89%" title="88km関門"></s></div>
     <div class="kmctl">
       <button class="btn" id="kmMinus" aria-label="1km戻す">−1</button>
-      <input type="number" id="kmInput" step="0.1" min="0" max="98.8" inputmode="decimal" aria-label="ガーミンの距離を入力">
+      <input type="number" id="kmInput" step="0.1" min="0" max="98.8" inputmode="decimal" placeholder="km" aria-label="ガーミンの距離を入力">
       <button class="btn" id="kmPlus" aria-label="1km進める">+1</button>
       <button class="btn" id="kmSet">ガーミンの距離で更新</button>
       <button class="btn primary" id="kmGps">📍 GPSで追う</button><button class="btn" id="kmAuto">時刻から自動</button>
@@ -112,7 +121,7 @@ details[open] summary::after{content:"▴"}
     <div class="src" id="kmSrc">スタート前。15:12に自動で動き出します。</div>
     <div class="next">
       <span>次のエイド</span><span class="v" id="nextAid">—</span>
-      <span>到着予定（このペース）</span><span class="v" id="nextAidEta">—</span>
+      <span>到着予定</span><span class="v" id="nextAidEta">—</span>
       <span>エイド設営</span><span class="v" id="aidOpen">—</span>
       <span>次の関門</span><span class="v" id="gateLeft">—</span>
       <span>ゴール予定</span><span class="v" id="goalEta">—</span>
@@ -132,7 +141,7 @@ details[open] summary::after{content:"▴"}
       <span>次のコンビニ</span><a class="v" id="nextCvs" href="honbu.html" style="color:var(--ink);text-decoration:none">—</a>
     </div>
     <details><summary>全部見る</summary>
-      <div class="scroll" style="margin-top:8px"><table id="wcTable"><thead><tr><th>km</th><th>場所</th><th>種類</th><th>メモ</th></tr></thead><tbody></tbody></table></div>
+      <div id="wcList" class="fl"></div>
     </details>
   </section>
 
@@ -150,8 +159,8 @@ details[open] summary::after{content:"▴"}
 
   <section class="card">
     <details id="tblDetails">
-      <summary>通過予想と天気 一覧（22h / 24h / 26h）</summary>
-      <div class="scroll" style="margin-top:10px"><table id="tblAll"><thead><tr><th>地点</th><th>km</th><th>ペース</th><th>通過</th><th>気温</th><th>湿度</th><th>風</th><th>空</th></tr></thead><tbody></tbody></table></div>
+      <summary>通過予想と天気 一覧（選んだペース）</summary>
+      <div class="scroll" style="margin-top:10px"><table id="tblAll"><thead><tr><th>地点</th><th>通過</th><th>気温</th><th>湿度</th><th>風</th><th>空</th></tr></thead><tbody></tbody></table></div>
       <p class="hint">気温・湿度・風は tenki.jp の名古屋・豊田・豊橋の1時間予報（10/31 朝8時発表）を地点間で補間。岡崎は豊田と豊橋の中間値。松平郷の山間部は−2℃・湿度高めに補正。</p>
     </details>
   </section>
@@ -175,7 +184,7 @@ details[open] summary::after{content:"▴"}
     <div class="row"><button class="btn primary" id="goalBtn" style="flex:1">🏁 ゴールした！</button><button class="btn" id="retireBtn" style="flex:1">🛏 ここまでにする</button></div>
     <div class="row"><input type="text" id="shareNote" placeholder="ひとこと（例：藤川宿で休憩中）" maxlength="40" autocomplete="off" style="flex:1"><button class="btn" id="noteBtn">送る</button></div>
     <div class="hint" id="shareHint">ONにすると、GPSの位置を約2分おきに「仲間の動き」の地図へ送ります。OFFで消えます。</div>
-    <a class="btn" style="text-decoration:none;display:inline-block;text-align:center" href="honbu.html">🗺 仲間の動きを見る（みんなの現在地）</a>
+    <a class="btn primary" style="text-decoration:none;display:block;text-align:center" href="honbu.html">🗺 仲間の動きを見る</a>
   </section>
 
   <section class="card" id="sosCard" style="border-color:var(--bad)">
@@ -209,8 +218,8 @@ const TL={wc:'🚻 トイレ',cvs:'🏪 コンビニ',both:'🏪🚻 コンビ�
 function renderFacil(km){ const nw=FACIL.find(f=>(f.t==='wc'||f.t==='both')&&f.km>km-0.3); const nc=FACIL.find(f=>(f.t==='cvs'||f.t==='both')&&f.km>km-0.3);
   $('nextWc').textContent= nw? nw.n.replace(/（.*?）/,'')+'（あと'+Math.max(0,nw.km-km).toFixed(1)+'km）🗺':'—'; if(nw) $('nextWc').href='honbu.html#km='+nw.km;
   $('nextCvs').textContent= nc? nc.n.replace(/（.*?）/,'')+'（あと'+Math.max(0,nc.km-km).toFixed(1)+'km）🗺':'—'; if(nc) $('nextCvs').href='honbu.html#km='+nc.km;
-  const tb=$('wcTable').querySelector('tbody'); if(!tb.children.length){ FACIL.forEach(f=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${f.km}</td><td style="white-space:normal">${f.n}</td><td>${TL[f.t]}</td><td style="white-space:normal;font-size:13px;color:var(--mute)">${f.m}</td>`; tb.appendChild(tr); }); }
-  [...tb.children].forEach((tr,i)=>tr.classList.toggle('now', FACIL[i]===nw||FACIL[i]===nc)); }
+  const box=$('wcList'); if(!box.children.length){ FACIL.forEach(f=>{ const d=document.createElement('div'); d.className='fi'; d.innerHTML=`<div class="fk">${f.km}<br><span style="font-size:11px">km</span></div><div><div class="fn">${f.n}</div><div class="ft">${TL[f.t]}</div></div><div class="fm">${f.m}</div>`; box.appendChild(d); }); }
+  [...box.children].forEach((d,i)=>d.classList.toggle('now', FACIL[i]===nw||FACIL[i]===nc)); }
 const CHEERS=[
  {km:0,t:'自分を信じて、GO!!'},
  {km:5,t:'もう5km。いい足音してる。'},
@@ -304,9 +313,8 @@ let render=function(){
 
 function buildTable(){
   const tb=$('tblAll').querySelector('tbody'); tb.innerHTML='';
-  for(const r of DATA.rows){ [22,24,26].forEach((p,i)=>{ const w=r.wx[p]; const tr=document.createElement('tr'); if(p===pace) tr.className='now';
-    tr.innerHTML=`<td>${i===0?r.name:''}</td><td>${i===0?r.km:''}</td><td>${p}h</td><td>${r.eta[p].slice(6)}</td><td>${w.temp}℃</td><td>${w.hum}%</td><td>${w.dir}${w.wind}</td><td>${w.wx}${w.note?'・'+w.note:''}</td>`; tb.appendChild(tr); }); }
-}
+  for(const r of DATA.rows){ const w=r.wx[pace]; const tr=document.createElement('tr');
+    tr.innerHTML=`<td style="white-space:normal;max-width:9em">${r.name.replace(/（.*?）/,'')}<br><span style="color:var(--mute);font-size:11px">${r.km}km</span></td><td>${r.eta[pace].slice(6)}</td><td>${w.temp}℃</td><td>${w.hum}%</td><td>${w.dir}${w.wind}</td><td>${w.wx}${w.note?'<br><span style="font-size:11px">'+w.note+'</span>':''}</td>`; tb.appendChild(tr); } }
 
 // ---- speech ----
 let voice=null;
