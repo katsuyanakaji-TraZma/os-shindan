@@ -237,7 +237,6 @@ const CHEERS=[
 let cheerShown=-1; try{ cheerShown=+(localStorage.getItem('tomo_cheer')||-1); }catch(e){}
 function cheer(km){ let c=null; for(const x of CHEERS){ if(km>=x.km-0.2) c=x; } if(!c) return; $('cheerText').textContent=c.t; $('cheerAt').textContent=c.km+'km地点';
   if(c.km>cheerShown){ cheerShown=c.km; try{ localStorage.setItem('tomo_cheer',String(c.km)); }catch(e){} if(gpsOn&&c.km>0){ speak(c.t.replace(/😭|♡|!!/g,'')); if(navigator.vibrate) navigator.vibrate([200,100,200]); } } }
-$('cheerSay').addEventListener('click',()=>speak($('cheerText').textContent.replace(/😭|♡/g,'')));
 const START = new Date(2026,9,31,15,12,0);
 const TOTAL = 98.8, LIMIT_H = 28;
 const AIDS = [{km:9.5,n:'給水 ファミマ',open:'16:00〜18:30'},{km:25,n:'第1エイド セブン',open:'18:30〜22:30'},{km:44,n:'第2エイド 松平郷',open:'21:30〜翌4:00'},{km:57,n:'第3エイド 瀧山寺',open:'23:30〜翌8:00'},{km:74,n:'第4エイド 藤川宿',open:'翌3:00〜11:30',gate:'11:30'},{km:88,n:'第5エイド 国府',open:'翌5:00〜16:00',gate:'16:00'},{km:98.8,n:'ゴール 花園幼稚園',open:'',gate:'19:12'}];
@@ -419,6 +418,7 @@ loadTeam(); setInterval(loadTeam,120000);
 let wl=null; async function lock(){ try{ if('wakeLock' in navigator) wl=await navigator.wakeLock.request('screen'); }catch(e){} }
 document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') lock(); }); lock();
 
+$('cheerSay').addEventListener('click',()=>speak($('cheerText').textContent.replace(/😭|♡/g,'')));
 buildLandmarks(); buildTable(); render(); setInterval(render,30000); setInterval(()=>{ if(gpsOn) fetchLive(); },60000);
 </script>
 </body></html>
