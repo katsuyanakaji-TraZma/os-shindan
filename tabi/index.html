@@ -119,6 +119,12 @@ details[open] summary::after{content:"▴"}
     </div>
   </section>
 
+  <section class="card" id="cheerCard" style="border-color:var(--ink);background:var(--ink-soft)">
+    <div class="label" style="color:var(--ink)">💚 100 LOVE</div>
+    <div id="cheerText" style="font-family:var(--f-display);font-size:22px;line-height:1.5">自分を信じて、GO!!</div>
+    <div class="row"><button class="btn" id="cheerSay">🔊</button><span class="hint" id="cheerAt">スタート</span></div>
+  </section>
+
   <section class="card" id="wcCard">
     <div class="label">🚻 トイレ ・ 🏪 コンビニ（次に来るもの）</div>
     <div class="next">
@@ -204,6 +210,33 @@ function renderFacil(km){ const nw=FACIL.find(f=>(f.t==='wc'||f.t==='both')&&f.k
   $('nextCvs').textContent= nc? nc.n.replace(/（.*?）/,'')+'（あと'+Math.max(0,nc.km-km).toFixed(1)+'km）🗺':'—'; if(nc) $('nextCvs').href='honbu.html#km='+nc.km;
   const tb=$('wcTable').querySelector('tbody'); if(!tb.children.length){ FACIL.forEach(f=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${f.km}</td><td style="white-space:normal">${f.n}</td><td>${TL[f.t]}</td><td style="white-space:normal;font-size:13px;color:var(--mute)">${f.m}</td>`; tb.appendChild(tr); }); }
   [...tb.children].forEach((tr,i)=>tr.classList.toggle('now', FACIL[i]===nw||FACIL[i]===nc)); }
+const CHEERS=[
+ {km:0,t:'自分を信じて、GO!!'},
+ {km:5,t:'もう5km。いい足音してる。'},
+ {km:10,t:'10km。あーあと90kmしか楽しめなーい😭 日が暮れたらヘッドランプ。'},
+ {km:15,t:'15km。ここからが本番。水、ひとくち。'},
+ {km:20,t:'20km。5分の1。名古屋はもう後ろ。'},
+ {km:25,t:'もう25km。あーあと75kmしか楽しめなーい😭'},
+ {km:30,t:'30km、豊田。この先は家康の故郷へ向かう道。'},
+ {km:35,t:'35km。真っ暗な道は、仲間と歩けば近道。'},
+ {km:40,t:'40km。松平郷まであと少し。天井画が待ってる。'},
+ {km:44,t:'44km、松平郷。ここまで来た自分を、まず褒める。'},
+ {km:50,t:'50km、半分！ 100 LOVE♡ その笑顔でGoalまでGO!'},
+ {km:55,t:'55km。いちばん寒くて、いちばん静かな時間。生きてる。'},
+ {km:60,t:'60km。痛い？ 生きてる証拠！ ありがたや〜'},
+ {km:65,t:'65km、岡崎城。家康も19歳でここに帰ってきた。'},
+ {km:70,t:'70km。夜が明ける。関門はもう見えてる。'},
+ {km:74,t:'74km、藤川宿。関門突破！ ここからは旧東海道。'},
+ {km:80,t:'80km。あと20km。弥次さん喜多さんも歩いた道。'},
+ {km:85,t:'85km、松並木。400年前の旅人と同じ木陰。'},
+ {km:88,t:'88km、最後のエイド。あと11km。もう見えてる。'},
+ {km:92,t:'92km。豊川を渡ればゴールの街。'},
+ {km:95,t:'95km。あと5km。一歩ずつ、笑顔で。'},
+ {km:98.8,t:'100km。ゴール。100 LOVE♡ おめでとう！'}];
+let cheerShown=-1; try{ cheerShown=+(localStorage.getItem('tomo_cheer')||-1); }catch(e){}
+function cheer(km){ let c=null; for(const x of CHEERS){ if(km>=x.km-0.2) c=x; } if(!c) return; $('cheerText').textContent=c.t; $('cheerAt').textContent=c.km+'km地点';
+  if(c.km>cheerShown){ cheerShown=c.km; try{ localStorage.setItem('tomo_cheer',String(c.km)); }catch(e){} if(gpsOn&&c.km>0){ speak(c.t.replace(/😭|♡|!!/g,'')); if(navigator.vibrate) navigator.vibrate([200,100,200]); } } }
+$('cheerSay').addEventListener('click',()=>speak($('cheerText').textContent.replace(/😭|♡/g,'')));
 const START = new Date(2026,9,31,15,12,0);
 const TOTAL = 98.8, LIMIT_H = 28;
 const AIDS = [{km:9.5,n:'給水 ファミマ',open:'16:00〜18:30'},{km:25,n:'第1エイド セブン',open:'18:30〜22:30'},{km:44,n:'第2エイド 松平郷',open:'21:30〜翌4:00'},{km:57,n:'第3エイド 瀧山寺',open:'23:30〜翌8:00'},{km:74,n:'第4エイド 藤川宿',open:'翌3:00〜11:30',gate:'11:30'},{km:88,n:'第5エイド 国府',open:'翌5:00〜16:00',gate:'16:00'},{km:98.8,n:'ゴール 花園幼稚園',open:'',gate:'19:12'}];
@@ -254,7 +287,7 @@ let render=function(){
   else $('gateLeft').textContent='なし';
   const goalE=etaFor(TOTAL,now); const limit=new Date(START.getTime()+LIMIT_H*36e5);
   $('goalEta').textContent= goalE ? fmt(goalE)+'（制限 '+fmt(limit)+'）' : '—';
-  renderFacil(km);
+  renderFacil(km); cheer(km);
   // weather
   const w=wxAt(km,now);
   $('wxWhere').textContent='— '+placeName(km);
