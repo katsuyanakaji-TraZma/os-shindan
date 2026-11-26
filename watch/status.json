@@ -1,5 +1,5 @@
 {
- "checkedAt": "2026-11-26T19:59+09:00",
+ "checkedAt": "2026-11-27T05:04+09:00",
  "note": {
   "listStatus": 200,
   "latest": [
@@ -43,14 +43,20 @@
  },
  "amazon": {
   "立てた目標は、なぜすぐ忘れ去られるのか": {
-   "httpStatus": 503,
-   "found": false,
-   "asins": []
+   "httpStatus": 200,
+   "found": true,
+   "asins": [
+    "B0HF1RD454"
+   ]
   },
   "GOKIGEN vol.4": {
-   "httpStatus": 503,
-   "found": false,
-   "asins": []
+   "httpStatus": 200,
+   "found": true,
+   "asins": [
+    "B0FCP1GQJT",
+    "B0G23PPXNC",
+    "B0G23TD8RV"
+   ]
   }
  }
 }
